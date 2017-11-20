@@ -7,13 +7,15 @@ let source = Observable.create(observer => {
         observer.next(numbers[index++]);
 
         if (index < numbers.length) {
-            setTimeout(produceValue, 2000);
+            setTimeout(produceValue, 250);
         } else {
             observer.complete();
         }
     };
     produceValue();
-});
+})
+    .map(n => n * 2)
+    .filter(n => n > 4);
 
 source.subscribe(
     value => console.log(`value: ${value}`),
