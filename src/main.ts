@@ -1,4 +1,6 @@
-import {Observable} from "rxjs";
+import {Observable} from "rxjs/Observable";
+import "rxjs/add/operator/map"
+import "rxjs/add/operator/filter"
 
 let numbers = [1, 2, 5, 10];
 let source = Observable.create(observer => {
