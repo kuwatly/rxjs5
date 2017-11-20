@@ -46,8 +46,10 @@ sourceEvent.subscribe(
 
 let output = document.getElementById("output");
 let button = document.getElementById("button");
+let buttonFetch = document.getElementById("buttonFetch");
 
 let clickEvent = Observable.fromEvent(button, "click");
+let clickEventFetch = Observable.fromEvent(buttonFetch, "click");
 
 function load(url: string) {
     return Observable.create(observer => {
@@ -66,6 +68,12 @@ function load(url: string) {
         xhr.open("GET", url);
         xhr.send();
     }).retryWhen(retryStrategy({attempts: 3, delay: 1500}));
+}
+
+function loadWithFetch(url: string) {
+    return Observable.defer(() => {
+        return Observable.fromPromise(fetch(url).then(r => r.json()));
+    });
 }
 
 function retryStrategy({attempts = 4, delay = 1000}) {
@@ -88,8 +96,16 @@ function renderMovies(movies) {
     })
 }
 load("movies.json").subscribe(renderMovies);
+loadWithFetch("movies.json").subscribe(renderMovies);
 
-clickEvent.flatMap(e => load("moviess.json"))
+clickEvent.flatMap(e => load("movies.json"))
+    .subscribe(
+        e => renderMovies,
+        e => console.log(`error: ${e}`),
+        () => console.log(`complete`)
+    );
+
+clickEventFetch.flatMap(e => loadWithFetch("movies.json"))
     .subscribe(
         e => renderMovies,
         e => console.log(`error: ${e}`),
