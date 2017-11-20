@@ -71,6 +71,7 @@ function renderMovies(movies) {
         output.appendChild(div);
     })
 }
+load("movies.json").subscribe(renderMovies);
 
 clickEvent.flatMap(e => load("movies.json"))
     .subscribe(
