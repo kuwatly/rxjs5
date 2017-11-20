@@ -65,7 +65,19 @@ function load(url: string) {
 
         xhr.open("GET", url);
         xhr.send();
-    });
+    }).retryWhen(retryStrategy({attempts: 3, delay: 1500}));
+}
+
+function retryStrategy({attempts = 4, delay = 1000}) {
+    return function(errors) {
+        return errors
+            .scan((acc, value) => {
+                console.log(acc, value);
+                return acc + 1;
+            }, 0)
+            .takeWhile(acc => acc < attempts)
+            .delay(delay);
+    }
 }
 
 function renderMovies(movies) {
