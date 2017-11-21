@@ -55,7 +55,7 @@ function load(url: string) {
     return Observable.create(observer => {
         let xhr = new XMLHttpRequest();
 
-        xhr.addEventListener("load", () => {
+        let onLoad = () => {
             if (xhr.status === 200) {
                 let data = JSON.parse(xhr.responseText);
                 observer.next(data);
@@ -63,10 +63,16 @@ function load(url: string) {
             } else {
                 observer.error(xhr.statusText);
             }
-        });
+        };
+        xhr.addEventListener("load", onLoad);
 
         xhr.open("GET", url);
         xhr.send();
+
+        return () => {
+            xhr.removeEventListener("load", onLoad);
+            xhr.abort();
+        }
     }).retryWhen(retryStrategy({attempts: 3, delay: 1500}));
 }
 
@@ -106,11 +112,13 @@ function renderMovies(movies) {
     })
 }
 
-load("movies.json").subscribe(renderMovies);
+let subscription = load("movies.json").subscribe(renderMovies);
 loadWithFetch("movies.json")
     .subscribe(renderMovies,
         e => console.log(`error: ${e}`),
         () => console.log(`complete!`));
+console.log(subscription);
+subscription.unsubscribe();
 
 clickEvent.flatMap(e => load("movies.json"))
     .subscribe(
