@@ -72,18 +72,28 @@ function load(url: string) {
 
 function loadWithFetch(url: string) {
     return Observable.defer(() => {
-        return Observable.fromPromise(fetch(url).then(r => r.json()));
-    });
+        return Observable.fromPromise(
+            fetch(url).then(r => {
+                if (r.status === 200) {
+                    return r.json();
+                } else {
+                    return Promise.reject(r);
+                }
+            }));
+    }).retryWhen(retryStrategy());
 }
 
-function retryStrategy({attempts = 4, delay = 1000}) {
+function retryStrategy({attempts = 4, delay = 1000} = {}) {
     return function(errors) {
         return errors
             .scan((acc, value) => {
-                console.log(acc, value);
-                return acc + 1;
+                acc += 1;
+                if (acc < attempts) {
+                    return acc;
+                } else {
+                    throw new Error(value);
+                }
             }, 0)
-            .takeWhile(acc => acc < attempts)
             .delay(delay);
     }
 }
@@ -95,19 +105,23 @@ function renderMovies(movies) {
         output.appendChild(div);
     })
 }
+
 load("movies.json").subscribe(renderMovies);
-loadWithFetch("movies.json").subscribe(renderMovies);
+loadWithFetch("movies.json")
+    .subscribe(renderMovies,
+        e => console.log(`error: ${e}`),
+        () => console.log(`complete!`));
 
 clickEvent.flatMap(e => load("movies.json"))
     .subscribe(
-        e => renderMovies,
+        renderMovies,
         e => console.log(`error: ${e}`),
         () => console.log(`complete`)
     );
 
 clickEventFetch.flatMap(e => loadWithFetch("movies.json"))
     .subscribe(
-        e => renderMovies,
+        renderMovies,
         e => console.log(`error: ${e}`),
         () => console.log(`complete`)
     );
